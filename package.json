@@ -1,0 +1,19 @@
+{
+  "name": "nodewave-email-api",
+  "version": "1.0.0",
+  "description": "Serverless email API for NodeWave using Nodemailer",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No build step required'",
+    "start": "echo 'Use vercel dev to run locally'"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.8"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.21"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
