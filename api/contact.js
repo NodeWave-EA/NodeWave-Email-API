@@ -167,21 +167,42 @@ export default async function handler(req, res) {
     origin: req.headers.origin,
     contentType: req.headers['content-type']
   });
+  // CORS: restrict to allowed origins and handle preflight
+  const allowedOrigins = [
+    'https://nodewave-ea.github.io',
+    'https://nodewave.net'
+  ];
 
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  const requestOrigin = req.headers.origin;
+
+  // Only allow requests without Origin header (server-to-server) or from allowed origins
+  const isOriginAllowed = !requestOrigin || allowedOrigins.includes(requestOrigin);
+
+  // Set common CORS headers. Access-Control-Allow-Origin must echo the origin when allowed.
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  }
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   // Handle preflight request
   if (req.method === 'OPTIONS') {
-    debugLog('info', 'Handling CORS preflight request');
+    debugLog('info', 'Handling CORS preflight request', { origin: requestOrigin, allowed: isOriginAllowed });
+    if (!isOriginAllowed) {
+      res.status(403).json({ success: false, error: 'Origin not allowed' });
+      return;
+    }
+
     res.status(200).end();
     return;
+  }
+
+  // For non-OPTIONS requests, block disallowed origins
+  if (!isOriginAllowed) {
+    debugLog('warn', 'Blocked request from disallowed origin', { origin: requestOrigin });
+    return res.status(403).json({ success: false, error: 'Origin not allowed' });
   }
 
   // Only allow POST requests
